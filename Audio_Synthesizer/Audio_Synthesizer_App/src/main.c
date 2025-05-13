@@ -31,9 +31,7 @@
 #include "sleep.h"
 #include "audio.h"
 
-#include "sine_generator.h"
-
-
+#include "frequency_generator.h"
 
 // Timer/Interrupt defines
 #define TIMER_DEVICE_ID		XPAR_XSCUTIMER_0_DEVICE_ID
@@ -45,7 +43,7 @@
 #define FREQUENCY 			500 //440Hz
 #define BUFFER_SIZE (SAMPLE_RATE / FREQUENCY) 	//Berekend de sample rate over de sinus maar van 1 periode
 
-float sine_wave_2[BUFFER_SIZE] = {0};
+q31_t sine_wave_q31[BUFFER_SIZE] = {0};
 
 // Functies
 static int Timer_Intr_Setup(XScuGic * IntcInstancePtr, XScuTimer *TimerInstancePtr, u16 TimerIntrId);
@@ -60,10 +58,10 @@ static void Timer_ISR(void * CallBackRef)
 
 		static int index = 0;
 
-		float output = sine_wave_2[index];
+		int32_t output_q31 = sine_wave_q31[index];
 
-		Xil_Out32(I2S_DATA_TX_L_REG, output);
-		Xil_Out32(I2S_DATA_TX_R_REG, output);
+		Xil_Out32(I2S_DATA_TX_L_REG, output_q31);
+		Xil_Out32(I2S_DATA_TX_R_REG, output_q31);
 
 		index = (index + 1) % BUFFER_SIZE;
 
@@ -71,7 +69,7 @@ static void Timer_ISR(void * CallBackRef)
 
 int main()
 {
-	int Status;
+	int ret;
     init_platform();
 	//Configure the IIC data structure
 	IicConfig(XPAR_XIICPS_0_DEVICE_ID);
@@ -85,14 +83,12 @@ int main()
 	AudioConfigureJacks();
 	LineinLineoutConfig();
 
-	print("DTMF Detection Demo (8kHz Sampling)\n\r");
+	print("SYNTHESIZER 92kHz\n\r");
 	print("=================================================\n\r");
 
-	float amplitude_f = 300000.0f;
-
-	int ret = generate_sine_wave_f(sine_wave_2, amplitude_f, FREQUENCY, SAMPLE_RATE, BUFFER_SIZE);
-	if(ret == -1){
-		perror("Sine generation failed");
+	ret = generate_sine_wave_q31(sine_wave_q31, 1.0, FREQUENCY, SAMPLE_RATE, BUFFER_SIZE); //amplitude 3.125% voor correct sinus op waveforms
+	if(ret == -1) {
+		perror("q31 sine generation failed");
 		return -1;
 	}
 
@@ -102,7 +98,7 @@ int main()
 		return -1;
 	}
 
-	print("Listening for DTMF tones...\r\n");
+	print("Starting Synthesizer...\r\n");
 
 
 	for (;;) {
@@ -167,5 +163,5 @@ static int Timer_Config()
 	XScuTimer_EnableAutoReload(&Scu_Timer);
 	XScuTimer_Start(&Scu_Timer);
 
-	return 1;
+	return 0;
 }
