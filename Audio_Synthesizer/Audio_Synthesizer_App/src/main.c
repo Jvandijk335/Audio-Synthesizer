@@ -31,6 +31,9 @@
 #include "sleep.h"
 #include "audio.h"
 
+#include "sine_generator.h"
+
+
 
 // Timer/Interrupt defines
 #define TIMER_DEVICE_ID		XPAR_XSCUTIMER_0_DEVICE_ID
@@ -38,18 +41,15 @@
 #define TIMER_IRPT_INTR		XPAR_SCUTIMER_INTR
 #define TIMER_LOAD_VALUE	0xFFFF
 
-#define FLOAT_TO_Q31(x)  ((q31_t)((x) * 2147483648.0f)) // Convert float to Q31
-
 #define SAMPLE_RATE 		96000 //96kHz
-#define FREQUENCY 			1000 //440Hz
+#define FREQUENCY 			500 //440Hz
 #define BUFFER_SIZE (SAMPLE_RATE / FREQUENCY) 	//Berekend de sample rate over de sinus maar van 1 periode
 
-q31_t sine_wave[BUFFER_SIZE] = {0};
 float sine_wave_2[BUFFER_SIZE] = {0};
 
 // Functies
-int generate_q31_sine_wave(float * sine_wave, float frequency_f, float amplitude_f, int buffer_size);
 static int Timer_Intr_Setup(XScuGic * IntcInstancePtr, XScuTimer *TimerInstancePtr, u16 TimerIntrId);
+static int Timer_Config();
 
 static void Timer_ISR(void * CallBackRef)
 {
@@ -61,7 +61,6 @@ static void Timer_ISR(void * CallBackRef)
 		static int index = 0;
 
 		float output = sine_wave_2[index];
-//		q31_t output = sine_wave[index];
 
 		Xil_Out32(I2S_DATA_TX_L_REG, output);
 		Xil_Out32(I2S_DATA_TX_R_REG, output);
@@ -89,38 +88,19 @@ int main()
 	print("DTMF Detection Demo (8kHz Sampling)\n\r");
 	print("=================================================\n\r");
 
-	float amplitude_f = 0.5f;
-	float frequency_f = 1000.0f;
+	float amplitude_f = 300000.0f;
 
-	int ret = generate_q31_sine_wave(sine_wave_2, frequency_f, amplitude_f, BUFFER_SIZE);
+	int ret = generate_sine_wave_f(sine_wave_2, amplitude_f, FREQUENCY, SAMPLE_RATE, BUFFER_SIZE);
 	if(ret == -1){
 		perror("Sine generation failed");
 		return -1;
 	}
 
-	XScuTimer Scu_Timer;
-	XScuTimer_Config *Scu_ConfigPtr;
-	XScuGic IntcInstance;
-
-	Scu_ConfigPtr = XScuTimer_LookupConfig(XPAR_PS7_SCUTIMER_0_DEVICE_ID);
-	Status = XScuTimer_CfgInitialize(&Scu_Timer, Scu_ConfigPtr, Scu_ConfigPtr->BaseAddr);
-	if (Status != XST_SUCCESS) {
-		print("Timer Initialization Failed\r\n");
-		cleanup_platform();
+	ret = Timer_Config();
+	if(ret == -1){
+		perror("Timer Config");
 		return -1;
 	}
-
-	Status = Timer_Intr_Setup(&IntcInstance, &Scu_Timer, XPS_SCU_TMR_INT_ID);
-	if (Status != XST_SUCCESS) {
-		print("Interrupt Setup Failed\r\n");
-		cleanup_platform();
-		return -1;
-	}
-
-	// Configure timer to trigger at the sampling rate (8kHz)
-	XScuTimer_LoadTimer(&Scu_Timer, (XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ / 2) / (unsigned int)SAMPLE_RATE);
-	XScuTimer_EnableAutoReload(&Scu_Timer);
-	XScuTimer_Start(&Scu_Timer);
 
 	print("Listening for DTMF tones...\r\n");
 
@@ -130,42 +110,6 @@ int main()
 	}
 
 	cleanup_platform();
-	return 0;
-}
-
-#define AMPLITUDE_SINE 300000
-
-int generate_q31_sine_wave(float * sine_wave_q, float frequency_f, float amplitude_f, int buffer_size) {
-	if(frequency_f > SAMPLE_RATE){
-		perror("frequency exceeds sample rate");
-		return -1;
-	}
-	if(amplitude_f > 1.0f){
-		perror("amplitude exceeds 1.0");
-		return -1;
-	}
-
-	const float theta_increment = 2* PI* FREQUENCY / SAMPLE_RATE;
-	static float theta = 0.0f;
-
-	for (int i = 0; i < BUFFER_SIZE; i++) {
-		theta += theta_increment ;
-		if ( theta > 2* PI) theta -= 2* PI;
-		float sine_value = AMPLITUDE_SINE * arm_sin_f32 (theta);
-
-		sine_wave_q[i] = (float)(sine_value + UINT32_MAX/2);
-	}
-
-//	const q31_t theta_increment = 2* PI* FREQUENCY / SAMPLE_RATE;
-//	static q31_t theta = 0;
-//
-//	for (int i = 0; i < BUFFER_SIZE; i++) {
-//		theta += theta_increment;
-//		if( theta > 2 * PI) theta -= 2* PI;
-//		q31_t sine_value = AMPLITUDE_SINE * arm_sin_q31(theta);
-//		sine_wave_q[i] = (q31_t)(sine_value + UINT32_MAX/2);
-//	}
-
 	return 0;
 }
 
@@ -193,4 +137,35 @@ static int Timer_Intr_Setup(XScuGic * IntcInstancePtr, XScuTimer *TimerInstanceP
 	// Step 6: Interrupt Setup
 	Xil_ExceptionEnable();
 	return XST_SUCCESS;
+}
+
+static int Timer_Config()
+{
+	int Status;
+
+	XScuTimer Scu_Timer;
+	XScuTimer_Config *Scu_ConfigPtr;
+	XScuGic IntcInstance;
+
+	Scu_ConfigPtr = XScuTimer_LookupConfig(XPAR_PS7_SCUTIMER_0_DEVICE_ID);
+	Status = XScuTimer_CfgInitialize(&Scu_Timer, Scu_ConfigPtr, Scu_ConfigPtr->BaseAddr);
+	if (Status != XST_SUCCESS) {
+		print("Timer Initialization Failed\r\n");
+		cleanup_platform();
+		return -1;
+	}
+
+	Status = Timer_Intr_Setup(&IntcInstance, &Scu_Timer, XPS_SCU_TMR_INT_ID);
+	if (Status != XST_SUCCESS) {
+		print("Interrupt Setup Failed\r\n");
+		cleanup_platform();
+		return -1;
+	}
+
+	// Configure timer to trigger at the sampling rate (8kHz)
+	XScuTimer_LoadTimer(&Scu_Timer, (XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ / 2) / (unsigned int)SAMPLE_RATE);
+	XScuTimer_EnableAutoReload(&Scu_Timer);
+	XScuTimer_Start(&Scu_Timer);
+
+	return 1;
 }

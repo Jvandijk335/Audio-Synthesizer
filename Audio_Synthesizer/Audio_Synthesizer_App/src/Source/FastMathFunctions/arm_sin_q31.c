@@ -75,7 +75,7 @@ q31_t arm_sin_q31(
 
   /* Return output value */
   return (sinVal << 1);
-}
+}git
 
 /**
   @} end of sin group

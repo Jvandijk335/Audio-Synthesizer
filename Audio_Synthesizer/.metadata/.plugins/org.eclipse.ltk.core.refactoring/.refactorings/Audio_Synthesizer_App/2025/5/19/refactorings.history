@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;Audio_Synthesizer_App/src/synthesizer.c&apos; to &apos;sine_generator.c&apos;" description="Rename resource &apos;synthesizer.c&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/synthesizer.c" name="sine_generator.c" stamp="1746892669338" updateReferences="true"/>
+</session>
