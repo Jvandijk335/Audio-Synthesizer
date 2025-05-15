@@ -2771,3 +2771,9 @@ java.lang.Exception
 
 !ENTRY com.xilinx.sdk.utils 0 0 2025-04-24 13:41:57.450
 !MESSAGE XSCT command with result: [::hsi::utils::closesw C:/Users/jvand/workspace/AUDIO_Synthesizer/Audio_Synthesizer/AudioProcessing/export/AudioProcessing/sw/AudioProcessing/standalone_ps7_cortexa9_0/system.mss], Result: [null, ]. Thread: Worker-2: Build Project
+
+!ENTRY com.xilinx.sdk.utils 0 0 2025-05-15 11:42:35.460
+!MESSAGE XSCT Command: [disconnect tcfchan#53], Thread: Thread-5327
+
+!ENTRY com.xilinx.sdk.utils 0 0 2025-05-15 11:42:35.485
+!MESSAGE XSCT command with result: [disconnect tcfchan#53], Result: [null, ]. Thread: Thread-5327
