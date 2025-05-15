@@ -1,0 +1,122 @@
+#include "frequency_generator.h"
+
+#define SLEW_SAMPLES 4  // Number of samples for edge smoothing
+
+int generate_sine_wave_f(float *sine_wave_f, float amplitude_f, int frequency, int sample_rate, int buffer_size) {
+    if (frequency > sample_rate) {
+        perror("frequency exceeds sample rate");
+        return -1;
+    }
+    if (amplitude_f > 8000000.0f) {
+        perror("amplitude exceeds 1.0");
+        return -1;
+    }
+
+    const float theta_increment = 2 * PI * frequency / sample_rate;
+    static float theta = 0.0f;
+
+    for (int i = 0; i < buffer_size; i++) {
+        theta += theta_increment;
+        if (theta > 2 * PI) theta -= 2 * PI;
+        float sine_value = amplitude_f * arm_sin_f32(theta);
+
+        sine_wave_f[i] = (float)(sine_value + REGISTER_MAX / 2);
+    }
+    return 0;
+}
+
+int generate_sine_wave_q31(q31_t *sine_wave_q31, float amplitude_percent, int frequency, int sample_rate, int buffer_size){
+	if (frequency > sample_rate) {
+		perror("frequency exceeds sample rate");
+		return -1;
+	}
+	if (amplitude_percent > 100.0f || amplitude_percent < 0.0f) {
+		perror("Amplitude must be between 0 and 100");
+		return -1;
+	}
+
+	// Convert amplitude percentage to Q31 scaling factor
+	q31_t amplitude_q31 = (q31_t)((amplitude_percent / 100.0f) * MAX_Q31);
+
+	for (int i = 0; i < buffer_size; ++i) {
+	// Create phase from 0 to just under 1.0 in Q31
+	q31_t phase = (q31_t)(((uint64_t)i * 0x7FFFFFFF) / buffer_size);
+	q31_t sine = arm_sin_q31(phase);
+	sine = (q31_t)(((int64_t)sine * amplitude_q31) >> 31);
+
+	// Scale from Q31 to 24-bit left-aligned DAC format
+	sine_wave_q31[i] = sine >> 8;  // Q31 to Q24 (keep top 24 bits)
+	}
+
+	return 0;
+}
+
+int generate_triangle_wave_q31(q31_t *triangle_wave_q31, float amplitude_percent, int frequency, int sample_rate, int buffer_size) {
+	if (frequency > sample_rate) {
+		perror("frequency exceeds sample rate");
+		return -1;
+	}
+	if (amplitude_percent > 100.0f || amplitude_percent < 0.0f) {
+		perror("Amplitude must be between 0 and 100");
+		return -1;
+	}
+
+	// Convert amplitude percentage to Q31 scaling factor
+	q31_t amplitude_q31 = (q31_t)((amplitude_percent / 100.0f) * MAX_Q31);
+
+	for (int i = 0; i < buffer_size; ++i) {
+		// Generate a triangle wave phase between 0 and 1
+		uint64_t phase = ((uint64_t)i * frequency * 2 * buffer_size) / sample_rate;
+		phase = phase % (2 * buffer_size);  // Wrap phase to triangle shape
+
+		q31_t value;
+		if (phase < buffer_size) {
+			// Rising edge
+			value = (q31_t)(((int64_t)amplitude_q31 * phase) / buffer_size);
+		} else {
+			// Falling edge
+			value = (q31_t)(((int64_t)amplitude_q31 * (2 * buffer_size - phase)) / buffer_size);
+		}
+
+		// Scale from Q31 to 24-bit DAC format
+		triangle_wave_q31[i] = value >> 8; // Q31 to Q24
+	}
+
+	return 0;
+}
+
+int generate_square_wave_q31(q31_t *square_wave_q31, float amplitude_percent, int frequency, int sample_rate, int buffer_size) {
+    if (frequency > sample_rate) {
+        perror("frequency exceeds sample rate");
+        return -1;
+    }
+    if (amplitude_percent > 100.0f || amplitude_percent < 0.0f) {
+        perror("Amplitude must be between 0 and 100");
+        return -1;
+    }
+
+    // Convert amplitude percentage to Q31 scaling factor
+    q31_t amplitude_q31 = (q31_t)((amplitude_percent / 100.0f) * MAX_Q31);
+
+    // Phase accumulator increment
+    q31_t phase_increment = (q31_t)(((uint64_t)frequency * (1ULL << 32)) / sample_rate);
+    q31_t phase = 0;
+
+    for (int i = 0; i < buffer_size; ++i) {
+        q31_t sample;
+
+        // Top half of the cycle = +amplitude, bottom half = -amplitude
+        if ((uint32_t)phase < 0x80000000) {
+            sample = amplitude_q31;
+        } else {
+            sample = -amplitude_q31;
+        }
+
+        // Convert Q31 to 24-bit left-aligned format (Q24)
+        square_wave_q31[i] = sample >> 8;
+
+        phase += phase_increment;
+    }
+
+    return 0;
+}

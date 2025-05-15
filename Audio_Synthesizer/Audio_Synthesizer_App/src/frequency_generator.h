@@ -8,7 +8,38 @@
 #define REGISTER_MAX 0xFFFFFF
 #define MAX_Q31 0x7FFFFFFF
 
+extern int next_wave_id;
+
+typedef enum {
+    WAVE_SINE,
+    WAVE_TRIANGLE,
+    WAVE_SQUARE
+} WaveType;
+
+typedef struct {
+    int id;
+    q31_t *buffer;
+    int buffer_size;
+    float amplitude;
+    int frequency;
+    int current_index;
+    WaveType type;
+} Wave;
+
+typedef struct WaveNode {
+    Wave wave;
+    struct WaveNode *next;
+} WaveNode;
+
+WaveNode* add_wave(WaveNode *head, int frequency, float amplitude, int sample_rate, WaveType type);
+WaveNode* remove_wave(WaveNode *head, int id);
+void free_waves(WaveNode *head);
+q31_t get_single_wave_sample_by_id(WaveNode *head, int wave_id);
+q31_t mix_waves_sample(WaveNode *head);
+
 int generate_sine_wave_f(float *sine_wave_f, float amplitude_f, int frequency, int sample_rate, int buffer_size);
 int generate_sine_wave_q31(q31_t *sine_wave_q31, float amplitude_percent, int frequency, int sample_rate, int buffer_size);
+int generate_triangle_wave_q31(q31_t *triangle_wave_q31, float amplitude_percent, int frequency, int sample_rate, int buffer_size);
+int generate_square_wave_q31(q31_t *square_wave_q31, float amplitude_percent, int frequency, int sample_rate, int buffer_size);
 
 #endif // FREQUENCY_GENERATOR_H
