@@ -39,9 +39,7 @@
 #define TIMER_IRPT_INTR		XPAR_SCUTIMER_INTR
 #define TIMER_LOAD_VALUE	0xFFFF
 
-#define SAMPLE_RATE 		48000 //96kHz
-#define FREQUENCY 			5000 //440Hz
-#define BUFFER_SIZE (SAMPLE_RATE / FREQUENCY) 	//Berekend de sample rate over de sinus maar van 1 periode
+#define SAMPLE_RATE 		96000 //Hz
 
 WaveNode *wave_list = NULL;
 
@@ -56,12 +54,13 @@ static void Timer_ISR(void * CallBackRef)
 
 	//-------------------------------------------------------//
 
-//	q31_t mixed_sample = mix_waves_sample(wave_list);
-//	q31_t wave = get_single_wave_sample_by_id(wave_list, 0);
 	q31_t wave = mix_waves_sample(wave_list);
+//	q31_t wave = get_single_wave_sample_by_id(wave_list, 0);
 
-	Xil_Out32(I2S_DATA_TX_L_REG, wave);
-	Xil_Out32(I2S_DATA_TX_R_REG, wave);
+	uint32_t wave24 = (uint32_t)(wave >> 8);
+
+	Xil_Out32(I2S_DATA_TX_L_REG, wave24);
+	Xil_Out32(I2S_DATA_TX_R_REG, wave24);
 }
 
 int main()
@@ -84,11 +83,11 @@ int main()
 	print("SYNTHESIZER 92kHz\n\r");
 	print("=================================================\n\r");
 
-	wave_list = add_wave(wave_list, 440, 6.0f, SAMPLE_RATE, WAVE_SINE);
-	wave_list = add_wave(wave_list, 880, 3.0f, SAMPLE_RATE, WAVE_SINE);
+	wave_list = add_wave(wave_list, 440, 5.5f, SAMPLE_RATE, WAVE_TRIANGLE);
+//	wave_list = add_wave(wave_list, 440, 6.0f, SAMPLE_RATE, WAVE_SINE);
+//	wave_list = add_wave(wave_list, 880, 1.0f, SAMPLE_RATE, WAVE_SINE);
 	wave_list = add_wave(wave_list, 1320, 2.0f, SAMPLE_RATE, WAVE_SINE);
-	wave_list = add_wave(wave_list, 1760, 1.5f, SAMPLE_RATE, WAVE_SINE);
-//	wave_list = add_wave(wave_list, 85, 5.0f, SAMPLE_RATE, WAVE_SINE);
+//	wave_list = add_wave(wave_list, 1760, 1.5f, SAMPLE_RATE, WAVE_SQUARE);
 
 	ret = Timer_Config();
 	if(ret == -1){
@@ -104,7 +103,6 @@ int main()
 	}
 
 	free_waves(wave_list);
-
 	cleanup_platform();
 	return 0;
 }
