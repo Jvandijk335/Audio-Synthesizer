@@ -1,2 +1,12 @@
-2025-05-15T23:23:55.5633401000-Nothing to build in platform 'AudioProcessing'
+2025-05-18T11:18:07.742899100255-11:18:07 **** Incremental Build of project AudioProcessing ****
+000-buildplatform.bat 40256 AudioProcessing no_domain_build 
+000-'\gnu\microblaze\lin\bin\' is not recognized as an internal or external command,
+000-operable program or batch file.
+000-'\gnu\microblaze\nt\bin\' is not recognized as an internal or external command,
+000-operable program or batch file.
+000-'\gnuwin\bin\' is not recognized as an internal or external command,
+000-operable program or batch file.
+000-XSDB Server Channel: tcfchan#65
+00255-
+11:18:14 Build Finished (took 6s.947ms)
 

@@ -15,12 +15,6 @@ typedef enum {
 	WAVE_SAWTOOTH
 } WaveType;
 
-typedef enum {
-	EFFECT_NONE,
-	EFFECT_FIR,
-	EFFECT_IIR
-} EffectType;
-
 typedef struct {
 	int id;
 	float amplitude;
@@ -39,7 +33,8 @@ typedef struct WaveNode {
 WaveNode* add_wave(WaveNode *head, int frequency, float amplitude, int sample_rate, WaveType type);
 WaveNode* remove_wave(WaveNode *head, int id);
 void free_waves(WaveNode *head);
-q31_t get_single_wave_sample_by_id(WaveNode *head, int wave_id);
-q31_t mix_waves_sample(WaveNode *head);
+q31_t get_single_wave_by_id(WaveNode *head, int wave_id);
+q31_t mix_generated_waves(WaveNode *head);
+q31_t mix_waves(WaveNode *head, q31_t *input_wave);
 
 #endif

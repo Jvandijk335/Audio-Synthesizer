@@ -32,6 +32,7 @@
 
 #include "audio.h"
 #include "frequency_generator.h"
+#include "audio_effects.h"
 
 // Timer/Interrupt defines
 #define TIMER_DEVICE_ID		XPAR_XSCUTIMER_0_DEVICE_ID
@@ -42,6 +43,7 @@
 #define SAMPLE_RATE 		96000 //Hz
 
 WaveNode *wave_list = NULL;
+uint32_t input;
 
 // Functies
 static int Timer_Intr_Setup(XScuGic * IntcInstancePtr, XScuTimer *TimerInstancePtr, u16 TimerIntrId);
@@ -54,8 +56,12 @@ static void Timer_ISR(void * CallBackRef)
 
 	//-------------------------------------------------------//
 
-	q31_t wave = mix_waves_sample(wave_list);
-//	q31_t wave = get_single_wave_sample_by_id(wave_list, 0);
+
+	input = Xil_In32(I2S_DATA_RX_L_REG);
+	q31_t wave = (q31_t)(input << 8);
+
+	wave = mix_waves(wave_list, &wave);
+	wave = process_effect(wave);
 
 	uint32_t wave24 = (uint32_t)(wave >> 8);
 
@@ -83,11 +89,17 @@ int main()
 	print("SYNTHESIZER 92kHz\n\r");
 	print("=================================================\n\r");
 
-	wave_list = add_wave(wave_list, 440, 5.5f, SAMPLE_RATE, WAVE_TRIANGLE);
+//	wave_list = add_wave(wave_list, 5, 3.5f, SAMPLE_RATE, WAVE_SINE);
 //	wave_list = add_wave(wave_list, 440, 6.0f, SAMPLE_RATE, WAVE_SINE);
-//	wave_list = add_wave(wave_list, 880, 1.0f, SAMPLE_RATE, WAVE_SINE);
-	wave_list = add_wave(wave_list, 1320, 2.0f, SAMPLE_RATE, WAVE_SINE);
-//	wave_list = add_wave(wave_list, 1760, 1.5f, SAMPLE_RATE, WAVE_SQUARE);
+//	wave_list = add_wave(wave_list, 880, 3.0f, SAMPLE_RATE, WAVE_SINE);
+//	wave_list = add_wave(wave_list, 1320, 2.0f, SAMPLE_RATE, WAVE_SINE);
+//	wave_list = add_wave(wave_list, 1760, 1.5f, SAMPLE_RATE, WAVE_SINE);
+//	wave_list = add_wave(wave_list, 440,3.5f, SAMPLE_RATE, WAVE_SQUARE);
+
+	audio_effects_init(SAMPLE_RATE);
+//	enable_delay(500.0);
+//	enable_echo(300.0f, 0.6f);
+	enable_predefined_fir_filter(PREDEFINED_FILTER_CUSTOM);
 
 	ret = Timer_Config();
 	if(ret == -1){

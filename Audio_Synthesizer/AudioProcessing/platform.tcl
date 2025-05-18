@@ -23,3 +23,7 @@ platform generate
 platform generate
 platform generate
 platform generate
+platform generate
+platform active {AudioProcessing}
+bsp reload
+platform generate -domains 

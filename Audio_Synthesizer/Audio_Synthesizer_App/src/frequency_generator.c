@@ -100,7 +100,7 @@ q31_t generate_wave_sample(Wave *wave) {
 
 //-------------------------------------------GET_WAVE--------------------------------------------------//
 
-q31_t get_single_wave_sample_by_id(WaveNode *head, int wave_id) {
+q31_t get_single_wave_by_id(WaveNode *head, int wave_id) {
 	WaveNode *node = head;
 
 	while(node != NULL) {
@@ -112,7 +112,7 @@ q31_t get_single_wave_sample_by_id(WaveNode *head, int wave_id) {
 	return 0;
 }
 
-q31_t mix_waves_sample(WaveNode *head) {
+q31_t mix_generated_waves(WaveNode *head) {
     if (head == NULL) return 0;
 
     int64_t sum = 0;
@@ -129,4 +129,27 @@ q31_t mix_waves_sample(WaveNode *head) {
     if (count == 0) return 0;
     sum /= count;
     return (q31_t)__SSAT(sum, 31);
+}
+
+q31_t mix_waves(WaveNode *head, q31_t *input_wave) {
+	int64_t sum = 0;
+	int count = 0;
+	WaveNode *node = head;
+
+	while (node != NULL) {
+		q31_t sample = generate_wave_sample(&node->wave);
+		sum += sample;
+		count++;
+		node = node->next;
+	}
+
+	if (input_wave != NULL){
+		sum += *input_wave;
+		count++;
+	}
+
+
+	if (count == 0) return 0;
+	sum /= count;
+	return (q31_t)__SSAT(sum, 31);
 }
