@@ -26,12 +26,13 @@ typedef struct {
 } Wave;
 
 typedef struct WaveNode {
-    Wave wave;
+    Wave *wave;
     struct WaveNode *next;
 } WaveNode;
 
 WaveNode* add_wave(WaveNode *head, int frequency, float amplitude, int sample_rate, WaveType type);
 WaveNode* remove_wave(WaveNode *head, int id);
+void reset_phases(WaveNode *head);
 void free_waves(WaveNode *head);
 q31_t get_single_wave_by_id(WaveNode *head, int wave_id);
 q31_t mix_generated_waves(WaveNode *head);

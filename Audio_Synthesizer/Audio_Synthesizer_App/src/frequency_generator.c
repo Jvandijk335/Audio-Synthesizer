@@ -9,17 +9,26 @@ int next_wave_id = 0;
 WaveNode* add_wave(WaveNode *head, int frequency, float amplitude, int sample_rate, WaveType type) {
     WaveNode *new_node = (WaveNode *)malloc(sizeof(WaveNode));
     if (!new_node) {
-        perror("malloc failed");
+//        perror("malloc failed");
         return head;
     }
 
-    new_node->wave.id = next_wave_id++;
-    new_node->wave.frequency = frequency;
-    new_node->wave.amplitude = amplitude;
-    new_node->wave.type = type;
-    new_node->wave.phase_acc = 0;
-    new_node->wave.phase_inc = (uint32_t)(((uint64_t)frequency << 32) / sample_rate);
+    new_node->wave = (Wave *)malloc(sizeof(Wave));
+    if(!new_node->wave) {
+//    	perror("malloc failed for wave");
+    	free(new_node);
+    	return head;
+    }
+
+    new_node->wave->id = next_wave_id++;
+    new_node->wave->frequency = frequency;
+    new_node->wave->amplitude = amplitude;
+    new_node->wave->type = type;
+    new_node->wave->phase_acc = 0;
+    new_node->wave->phase_inc = (uint32_t)(((uint64_t)frequency << 32) / sample_rate);
     new_node->next = head;
+
+    reset_phases(new_node->next);
 
     return new_node;
 }
@@ -29,19 +38,21 @@ WaveNode* remove_wave(WaveNode *head, int id) {
     WaveNode *prev = NULL;
 
     while (current != NULL) {
-        if (current->wave.id == id) {
+        if (current->wave->id == id) {
             if (prev) {
             	prev->next = current->next;
             } else {
                 head = current->next;
             }
+            free(current->wave);
+            current->wave = NULL;
             free(current);
             break;
         }
         prev = current;
         current = current->next;
     }
-    printf("Wave with id %d not found\n", id);
+//    printf("Wave with id %d not found\n", id);
     return head;
 }
 
@@ -49,8 +60,17 @@ void free_waves(WaveNode *head) {
     WaveNode *current = head;
     while (current != NULL) {
         WaveNode *next = current->next;
+        free(current->wave);
         free(current);
         current = next;
+    }
+}
+
+void reset_phases(WaveNode *head) {
+    WaveNode *node = head;
+    while (node != NULL) {
+        node->wave->phase_acc = 0;
+        node = node->next;
     }
 }
 
@@ -104,8 +124,8 @@ q31_t get_single_wave_by_id(WaveNode *head, int wave_id) {
 	WaveNode *node = head;
 
 	while(node != NULL) {
-		if(node->wave.id == wave_id) {
-			return generate_wave_sample(&node->wave);
+		if(node->wave->id == wave_id) {
+			return generate_wave_sample(node->wave);
 		}
 		node = node->next;
 	}
@@ -120,7 +140,7 @@ q31_t mix_generated_waves(WaveNode *head) {
     WaveNode *node = head;
 
     while (node != NULL) {
-        q31_t sample = generate_wave_sample(&node->wave);
+        q31_t sample = generate_wave_sample(node->wave);
         sum += sample;
         count++;
         node = node->next;
@@ -137,7 +157,7 @@ q31_t mix_waves(WaveNode *head, q31_t *input_wave) {
 	WaveNode *node = head;
 
 	while (node != NULL) {
-		q31_t sample = generate_wave_sample(&node->wave);
+		q31_t sample = generate_wave_sample(node->wave);
 		sum += sample;
 		count++;
 		node = node->next;
