@@ -29,6 +29,7 @@
 #include "xparameters.h"
 #include "xiicps.h"
 #include "sleep.h"
+#include "xgpio.h"
 
 #include "audio.h"
 #include "frequency_generator.h"
@@ -47,7 +48,7 @@ uint32_t input;
 
 // Functies
 static int Timer_Intr_Setup(XScuGic * IntcInstancePtr, XScuTimer *TimerInstancePtr, u16 TimerIntrId);
-static int Timer_Config();
+static int Timer_Config(XScuTimer *Scu_Timer, XScuGic *IntcInstance);
 
 static void Timer_ISR(void * CallBackRef)
 {
@@ -57,10 +58,7 @@ static void Timer_ISR(void * CallBackRef)
 	//-------------------------------------------------------//
 
 
-	input = Xil_In32(I2S_DATA_RX_L_REG);
-	q31_t wave = (q31_t)(input << 8);
-
-	wave = mix_waves(wave_list, &wave);
+	q31_t wave = mix_waves( wave_list, NULL );
 	wave = process_effect(wave);
 
 	uint32_t wave24 = (uint32_t)(wave >> 8);
@@ -72,7 +70,22 @@ static void Timer_ISR(void * CallBackRef)
 int main()
 {
 	int ret;
+	uint8_t toggles = 0xFF;
+	XGpio gpio_instance;
+	int id_1[4] = { -1, -1, -1, -1 };
+	int id_2[3] = { -1, -1, -1 };
+	int id_4 = -1;
+	int id_8 = -1;
+
+	XScuTimer Scu_Timer;
+	XScuGic IntcInstance;
+
     init_platform();
+
+    //configure buttons
+    XGpio_Initialize( &gpio_instance, XPAR_AXI_GPIO_1_BASEADDR );
+    XGpio_SetDataDirection( &gpio_instance, 1, 0x0F );
+    XGpio_SetDataDirection( &gpio_instance, 2, 0x03 );
 
 	//Configure the IIC data structure
 	IicConfig(XPAR_XIICPS_0_DEVICE_ID);
@@ -99,9 +112,9 @@ int main()
 	audio_effects_init(SAMPLE_RATE);
 //	enable_delay(500.0);
 //	enable_echo(300.0f, 0.6f);
-	enable_predefined_fir_filter(PREDEFINED_FILTER_CUSTOM);
+//	enable_predefined_fir_filter(PREDEFINED_FILTER_CUSTOM);
 
-	ret = Timer_Config();
+	ret = Timer_Config(&Scu_Timer, &IntcInstance);
 	if(ret == -1){
 		perror("Timer Config");
 		return -1;
@@ -111,7 +124,132 @@ int main()
 
 
 	for (;;) {
-		// Main loop - interrupt driven processing
+		uint32_t read_value = XGpio_DiscreteRead( &gpio_instance, 1 );
+
+		if ( ( read_value & 0x1 ) == 0x1 )
+		{
+			usleep_A9( 5000 );
+			while ( ( read_value & 0x1 ) == 0x1 )
+			{
+				read_value = XGpio_DiscreteRead( &gpio_instance, 1 );
+				usleep_A9( 500 );
+			}
+
+			if ( ( toggles & 0x1 ) == 0x1 )
+			{
+				wave_list = add_wave(wave_list, 466, 100.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[0] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 587, 50.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[1] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 698, 60.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[2] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 932, 50.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[3] = wave_list->wave->id;
+			}
+			else
+			{
+				wave_list = remove_wave( wave_list, id_1[0] );
+				wave_list = remove_wave( wave_list, id_1[1] );
+				wave_list = remove_wave( wave_list, id_1[2] );
+				wave_list = remove_wave( wave_list, id_1[3] );
+			}
+
+			toggles ^= 0x1;
+		}
+		else if ( ( read_value & 0x2 ) == 0x2 )
+		{
+			usleep_A9( 5000 );
+			while ( ( read_value & 0x2 ) == 0x2 )
+			{
+				read_value = XGpio_DiscreteRead( &gpio_instance, 1 );
+				usleep_A9( 500 );
+			}
+
+			if ( ( toggles & 0x2 ) == 0x2 )
+			{
+				wave_list = add_wave(wave_list, 740, 100.0f, SAMPLE_RATE, WAVE_SAWTOOTH);
+				id_2[0] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 880, 60.0f, SAMPLE_RATE, WAVE_TRIANGLE);
+				id_2[1] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 1174, 30.0f, SAMPLE_RATE, WAVE_TRIANGLE);
+				id_2[2] = wave_list->wave->id;
+			}
+			else
+			{
+				wave_list = remove_wave( wave_list, id_2[0] );
+				wave_list = remove_wave( wave_list, id_2[1] );
+				wave_list = remove_wave( wave_list, id_2[2] );
+			}
+
+			toggles ^= 0x2;
+		}
+		else if ( ( read_value & 0x4 ) == 0x4 )
+		{
+			usleep_A9( 5000 );
+			while ( ( read_value & 0x4 ) == 0x4 )
+			{
+				read_value = XGpio_DiscreteRead( &gpio_instance, 1 );
+				usleep_A9( 500 );
+			}
+
+			if ( ( toggles & 0x4 ) == 0x4 )
+			{
+				wave_list = add_wave(wave_list, 660, 100.0f, SAMPLE_RATE, WAVE_SINE);
+				id_4 = wave_list->wave->id;
+			}
+			else
+			{
+				wave_list = remove_wave( wave_list, id_4 );
+			}
+
+			toggles ^= 0x4;
+		}
+		else if ( ( read_value & 0x8 ) == 0x8 )
+		{
+			usleep_A9( 5000 );
+			while ( ( read_value & 0x8 ) == 0x8 )
+			{
+				read_value = XGpio_DiscreteRead( &gpio_instance, 1 );
+				usleep_A9( 500 );
+			}
+
+			if ( ( toggles & 0x8 ) == 0x8 )
+			{
+
+				wave_list = add_wave(wave_list, 880, 100.0f, SAMPLE_RATE, WAVE_SINE);
+				id_8 = wave_list->wave->id;
+			}
+			else
+			{
+				wave_list = remove_wave( wave_list, id_8 );
+			}
+
+			toggles ^= 0x8;
+		}
+
+		usleep_A9( 500 );
+
+		read_value = XGpio_DiscreteRead( &gpio_instance, 2 );
+
+		if ( ( read_value & 0x3 ) == 0x3 )
+		{
+			enable_predefined_fir_filter( PREDEFINED_FILTER_LOWPASS );
+		}
+		else if ( ( read_value & 0x1 ) == 0x1 )
+		{
+			enable_delay( 330.0 );
+		}
+		else if ( ( read_value & 0x2 ) == 0x2 )
+		{
+			enable_echo( 500.0, 0.45 );
+		}
+		else
+		{
+			disable_effect();
+			disable_filter();
+		}
+
+		usleep_A9( 500 );
 	}
 
 	free_waves(wave_list);
@@ -145,23 +283,21 @@ static int Timer_Intr_Setup(XScuGic * IntcInstancePtr, XScuTimer *TimerInstanceP
 	return XST_SUCCESS;
 }
 
-static int Timer_Config()
+static int Timer_Config(XScuTimer *Scu_Timer, XScuGic *IntcInstance)
 {
 	int Status;
 
-	XScuTimer Scu_Timer;
 	XScuTimer_Config *Scu_ConfigPtr;
-	XScuGic IntcInstance;
 
 	Scu_ConfigPtr = XScuTimer_LookupConfig(XPAR_PS7_SCUTIMER_0_DEVICE_ID);
-	Status = XScuTimer_CfgInitialize(&Scu_Timer, Scu_ConfigPtr, Scu_ConfigPtr->BaseAddr);
+	Status = XScuTimer_CfgInitialize(Scu_Timer, Scu_ConfigPtr, Scu_ConfigPtr->BaseAddr);
 	if (Status != XST_SUCCESS) {
 		print("Timer Initialization Failed\r\n");
 		cleanup_platform();
 		return -1;
 	}
 
-	Status = Timer_Intr_Setup(&IntcInstance, &Scu_Timer, XPS_SCU_TMR_INT_ID);
+	Status = Timer_Intr_Setup(IntcInstance, Scu_Timer, XPS_SCU_TMR_INT_ID);
 	if (Status != XST_SUCCESS) {
 		print("Interrupt Setup Failed\r\n");
 		cleanup_platform();
@@ -169,9 +305,9 @@ static int Timer_Config()
 	}
 
 	// Configure timer to trigger at the sampling rate (8kHz)
-	XScuTimer_LoadTimer(&Scu_Timer, (XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ / 2) / (unsigned int)SAMPLE_RATE);
-	XScuTimer_EnableAutoReload(&Scu_Timer);
-	XScuTimer_Start(&Scu_Timer);
+	XScuTimer_LoadTimer(Scu_Timer, (XPAR_PS7_CORTEXA9_0_CPU_CLK_FREQ_HZ / 2) / (unsigned int)SAMPLE_RATE);
+	XScuTimer_EnableAutoReload(Scu_Timer);
+	XScuTimer_Start(Scu_Timer);
 
 	return 0;
 }

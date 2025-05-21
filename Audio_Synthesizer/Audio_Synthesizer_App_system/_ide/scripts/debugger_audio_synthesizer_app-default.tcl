@@ -25,4 +25,5 @@ ps7_post_config
 targets -set -nocase -filter {name =~ "*A9*#0"}
 dow C:/Users/jvand/workspace/AUDIO_Synthesizer/Audio_Synthesizer/Audio_Synthesizer_App/Debug/Audio_Synthesizer_App.elf
 configparams force-mem-access 0
-bpadd -addr &main
+targets -set -nocase -filter {name =~ "*A9*#0"}
+con
