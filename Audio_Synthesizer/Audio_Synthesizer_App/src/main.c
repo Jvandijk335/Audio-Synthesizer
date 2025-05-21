@@ -59,7 +59,7 @@ static void Timer_ISR(void * CallBackRef)
 
 
 	q31_t wave = mix_waves( wave_list, NULL );
-	//wave = process_effect(wave);
+	wave = process_effect(wave);
 
 	uint32_t wave24 = (uint32_t)(wave >> 8);
 
@@ -72,8 +72,8 @@ int main()
 	int ret;
 	uint8_t toggles = 0xFF;
 	XGpio gpio_instance;
-	int id_1 = -1;
-	int id_2 = -1;
+	int id_1[4] = { -1, -1, -1, -1 };
+	int id_2[3] = { -1, -1, -1 };
 	int id_4 = -1;
 	int id_8 = -1;
 
@@ -85,6 +85,7 @@ int main()
     //configure buttons
     XGpio_Initialize( &gpio_instance, XPAR_AXI_GPIO_1_BASEADDR );
     XGpio_SetDataDirection( &gpio_instance, 1, 0x0F );
+    XGpio_SetDataDirection( &gpio_instance, 2, 0x03 );
 
 	//Configure the IIC data structure
 	IicConfig(XPAR_XIICPS_0_DEVICE_ID);
@@ -108,7 +109,7 @@ int main()
 //	wave_list = add_wave(wave_list, 1760, 1.5f, SAMPLE_RATE, WAVE_SINE);
 //	wave_list = add_wave(wave_list, 440,3.5f, SAMPLE_RATE, WAVE_SQUARE);
 
-//	audio_effects_init(SAMPLE_RATE);
+	audio_effects_init(SAMPLE_RATE);
 //	enable_delay(500.0);
 //	enable_echo(300.0f, 0.6f);
 //	enable_predefined_fir_filter(PREDEFINED_FILTER_CUSTOM);
@@ -136,12 +137,21 @@ int main()
 
 			if ( ( toggles & 0x1 ) == 0x1 )
 			{
-				wave_list = add_wave(wave_list, 440, 6.0f, SAMPLE_RATE, WAVE_SINE);
-				id_1 = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 466, 100.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[0] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 587, 50.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[1] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 698, 60.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[2] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 932, 50.0f, SAMPLE_RATE, WAVE_SINE);
+				id_1[3] = wave_list->wave->id;
 			}
 			else
 			{
-				wave_list = remove_wave( wave_list, id_1 );
+				wave_list = remove_wave( wave_list, id_1[0] );
+				wave_list = remove_wave( wave_list, id_1[1] );
+				wave_list = remove_wave( wave_list, id_1[2] );
+				wave_list = remove_wave( wave_list, id_1[3] );
 			}
 
 			toggles ^= 0x1;
@@ -157,12 +167,18 @@ int main()
 
 			if ( ( toggles & 0x2 ) == 0x2 )
 			{
-				wave_list = add_wave(wave_list, 880, 3.0f, SAMPLE_RATE, WAVE_SINE);
-				id_2 = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 740, 100.0f, SAMPLE_RATE, WAVE_SAWTOOTH);
+				id_2[0] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 880, 60.0f, SAMPLE_RATE, WAVE_TRIANGLE);
+				id_2[1] = wave_list->wave->id;
+				wave_list = add_wave(wave_list, 1174, 30.0f, SAMPLE_RATE, WAVE_TRIANGLE);
+				id_2[2] = wave_list->wave->id;
 			}
 			else
 			{
-				wave_list = remove_wave( wave_list, id_2 );
+				wave_list = remove_wave( wave_list, id_2[0] );
+				wave_list = remove_wave( wave_list, id_2[1] );
+				wave_list = remove_wave( wave_list, id_2[2] );
 			}
 
 			toggles ^= 0x2;
@@ -178,7 +194,7 @@ int main()
 
 			if ( ( toggles & 0x4 ) == 0x4 )
 			{
-				wave_list = add_wave(wave_list, 1320, 2.0f, SAMPLE_RATE, WAVE_SINE);
+				wave_list = add_wave(wave_list, 660, 100.0f, SAMPLE_RATE, WAVE_SINE);
 				id_4 = wave_list->wave->id;
 			}
 			else
@@ -200,7 +216,7 @@ int main()
 			if ( ( toggles & 0x8 ) == 0x8 )
 			{
 
-				wave_list = add_wave(wave_list, 1760, 1.5f, SAMPLE_RATE, WAVE_SINE);
+				wave_list = add_wave(wave_list, 880, 100.0f, SAMPLE_RATE, WAVE_SINE);
 				id_8 = wave_list->wave->id;
 			}
 			else
@@ -210,10 +226,30 @@ int main()
 
 			toggles ^= 0x8;
 		}
+
+		usleep_A9( 500 );
+
+		read_value = XGpio_DiscreteRead( &gpio_instance, 2 );
+
+		if ( ( read_value & 0x3 ) == 0x3 )
+		{
+			enable_predefined_fir_filter( PREDEFINED_FILTER_LOWPASS );
+		}
+		else if ( ( read_value & 0x1 ) == 0x1 )
+		{
+			enable_delay( 330.0 );
+		}
+		else if ( ( read_value & 0x2 ) == 0x2 )
+		{
+			enable_echo( 500.0, 0.45 );
+		}
 		else
 		{
-			usleep_A9( 5000 );
+			disable_effect();
+			disable_filter();
 		}
+
+		usleep_A9( 500 );
 	}
 
 	free_waves(wave_list);

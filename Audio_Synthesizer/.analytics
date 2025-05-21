@@ -169,3 +169,27 @@ timestamp=[2025-05-20 20:03:15], mode=BUILD, duration=0:00:05.449, duration_ms=5
 timestamp=[2025-05-20 20:04:11], mode=BUILD, duration=0:00:06.582, duration_ms=6582, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
 timestamp=[2025-05-20 20:04:27], mode=BUILD, duration=0:00:06.648, duration_ms=6648, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
 timestamp=[2025-05-20 20:09:22], mode=BUILD, duration=0:00:06.750, duration_ms=6750, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-20 20:16:11], mode=WORKBENCH_START, duration=0:00:06.753, duration_ms=6753, data={}
+timestamp=[2025-05-20 20:16:12], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.036, duration_ms=36, data={}
+timestamp=[2025-05-20 20:16:12], mode=WORKBENCH_UI_INIT, duration=0:00:00.966, duration_ms=966, data={editors_count=8, platform_editors_count=3, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=AudioProcessing,Audio_Synthesizer_App,Audio_Synthesizer_App_system,RemoteSystemsTempFiles}
+timestamp=[2025-05-20 20:16:40], mode=BUILD, duration=0:00:06.920, duration_ms=6920, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 15:40:28], mode=WORKBENCH_START, duration=0:00:08.601, duration_ms=8601, data={}
+timestamp=[2025-05-21 15:40:28], mode=PLATFORM_REPOSITORY_INIT, duration=0:00:00.128, duration_ms=128, data={}
+timestamp=[2025-05-21 15:40:28], mode=WORKBENCH_UI_INIT, duration=0:00:00.838, duration_ms=838, data={editors_count=8, platform_editors_count=3, projects_count=4, platform_projects_count=1, active_platform_editor=false, projects=AudioProcessing,Audio_Synthesizer_App,Audio_Synthesizer_App_system,RemoteSystemsTempFiles}
+timestamp=[2025-05-21 15:40:49], mode=BUILD, duration=0:00:11.598, duration_ms=11598, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 15:45:32], mode=BUILD, duration=0:00:09.399, duration_ms=9399, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 15:51:40], mode=BUILD, duration=0:00:06.767, duration_ms=6767, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:06:03], mode=BUILD, duration=0:00:10.194, duration_ms=10194, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:22:24], mode=BUILD, duration=0:00:08.448, duration_ms=8448, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:28:21], mode=BUILD, duration=0:00:00.407, duration_ms=407, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=true}
+timestamp=[2025-05-21 16:28:30], mode=BUILD, duration=0:00:08.353, duration_ms=8353, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:37:21], mode=BUILD, duration=0:00:08.477, duration_ms=8477, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:43:22], mode=BUILD, duration=0:00:07.187, duration_ms=7187, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:44:05], mode=BUILD, duration=0:00:08.423, duration_ms=8423, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:46:12], mode=BUILD, duration=0:00:08.445, duration_ms=8445, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:46:34], mode=BUILD, duration=0:00:08.294, duration_ms=8294, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:48:26], mode=BUILD, duration=0:00:08.332, duration_ms=8332, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:51:13], mode=BUILD, duration=0:00:08.404, duration_ms=8404, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 16:51:46], mode=BUILD, duration=0:00:08.475, duration_ms=8475, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 17:01:24], mode=BUILD, duration=0:00:08.740, duration_ms=8740, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
+timestamp=[2025-05-21 17:06:15], mode=BUILD, duration=0:00:08.529, duration_ms=8529, data={name=Audio_Synthesizer_App, configuration=Debug, clean_build=false}
